@@ -1,0 +1,167 @@
+---
+title: "Portfolio 1 — Experimental Methods 1 2019"
+author: "Kristian Severin Mengel-Niemann"
+date: "10/1/2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE)
+
+library(tidyverse)
+library(pastecs)
+```
+
+## Portfolio exam - Part 1
+
+#### Write a short data mining report on the CogSci Intro Week Personality Test Data in which you answer the following questions in prose, code and graphs:
+
+First of all, you have to import the personality data. If the dataset is in your working directory, then you can just load it into R. Otherwise you will have to change your working directory.
+
+```{r load_data}
+df <- read.csv("NEW_CogSciPersonalityTest2019 copy.csv")
+
+```
+
+Once you are done loading the data, you can start working on the questions below.
+
+#### Question 1
+
+Who can hold their breath longer on average, those with right or left ocular dominance? Plot the data using ggplot2 to find out. The plots should include error bars (depicting the standard error of the means). Then use the mean() and sd() functions to find mean and standard deviation of the two eye dominance groups.
+
+
+```{r question1}
+df_left_right_eyes <- filter(df, df$ocular_dom == "Left" | df$ocular_dom == "Right")
+
+Breath_Hold_Ocular_Dominance <- ggplot(df_left_right_eyes, aes(x = ocular_dom, y = breath_hold, colour = ocular_dom)) +
+  theme_minimal() +
+    labs(x = "Ocular_Dominance", y = "Breath_Hold")
+
+
+Breath_Hold_Ocular_Dominance +
+  geom_boxplot(width = 0.5) +
+  ggtitle("Box Plot with mean")+
+stat_summary(fun.y = mean, geom = "point", shape = 23, colour = "Black")+stat_summary(fun.data = mean_se, geom = "errorbar", color = 'black', width = 0.1) +
+  ggtitle("Using Standard Error of the Mean")
+
+group_eyes <- group_by(df_left_right_eyes,ocular_dom) %>% summarise(mean(breath_hold),sd(breath_hold))
+
+group_eyes
+
+```
+
+Explain your results in plain terms here: 
+
+The graphs show that those with right ocular dominance can hold their breath longer on average. The "mean()" function concludes the same thing as it gives those with left ocular dominance a mean-value of 53.42 seconds and those with right ocular dominance a mean value that is slightly higher 57.73 seconds. These results are not regarding the median as an important method of measurement though. Looking at the boxplots however, it becomes obvious that the two groups share alomost similar medians. This means that 50% of the data-points in both groups are below nearly the same point (around 53.5 seconds). One could argue that the reason the group with right ocular dominance is scoring higher on average is due to people who perform in the upper 25% percentile and the fact that they outperform the equivalent percentile group for those with left ocular dominance.      
+---
+
+#### Question 2
+
+Who likes silence vs. noise best? Males or females? Also in this case you should plot the data using ggplot2 (including error bars), then use the mean() and sd() functions to find mean and standard deviation of the two genders.
+
+```{r question2}
+Silence_Or_Noise <- ggplot(df, aes(x = df$gender, y = df$sound_level_pref, colour = df$gender)) +
+  theme_minimal() +
+    labs(x = "Gender", y = "Sound_level_preference")
+
+
+Silence_Or_Noise +
+  geom_boxplot(width = 0.5) +
+  ggtitle("Box Plot with mean")+
+stat_summary(fun.y = mean, geom = "point", shape = 23, colour = "Black")+stat_summary(fun.data = mean_se, geom = "errorbar", color = 'black', width = 0.1) +
+  ggtitle("Using Standard Error of the Mean")
+
+group_sound_level <- group_by(df) %>% summarise(mean(sound_level_pref),sd(sound_level_pref))
+
+group_sound_level
+
+```
+
+Explain your results in plain terms here: 
+
+The boxplots show that females center around similiar values in terms of what sound-level they prefer. Males are more spread out. This means that men differ more in what sound-level they prefer compared to women. Looking at the medians of the boxplots it becomes apparent that the two groups both have 50% of their data points below the same level (20). This points in the direction that the data points in the male group might be a bit more bimodaly distributed. In plain terms this means that men either like or dislike noise where females prefer a medium level of noise. 
+
+
+---
+
+#### Question 3
+
+Are the breath_hold data normally distributed? Provide visual and numeric support for your answer.
+
+```{r question3}
+ggplot(df, aes(x = breath_hold)) +
+  geom_histogram(aes(y = ..density..), binwidth = 0.75) +
+  ggtitle("This is how breath hold data distributes") +
+  stat_function(fun = dnorm, args = list(mean = mean(df$breath_hold, na.rm = TRUE), sd = sd(df$breath_hold, na.rm = TRUE)), colour= "darkgreen", size = 1)+
+  theme_classic()
+
+qqnorm(df$breath_hold)
+
+#Numeric Support
+round(pastecs::stat.desc(df$breath_hold, basic = FALSE, norm = TRUE), digits = 2)
+```
+
+
+Explain your results in plain terms here: 
+
+The breath_hold data is not normally distributed. The graph that shows how the data distributes resembles a normal distribution, but it is not a perfect fit. The numeric data backs this statement as the p-value is smaller than 0.05 which is the level where the null-hypothesis that says the data follow a normal distribution can't be rejected at. The p-value is smaller than 0.05 (0.04) and therefore the null-hypothesis is rejected. The Q-Q-plot does look like something that could be a diagonal line. It is however, not a perfect diagonal and this put together with the numeric data and the distributional graph leads to the conclusion that the breath_hold data is not normally distributed.  
+
+---
+
+#### Question 4
+
+Are the Balloon reaction time data (balloon and balloon_balance) normally distributed? Provide visual and numeric support for your answer.
+
+
+The question has been divided into two sub-answers
+4a
+```{r question4}
+ggplot(df, aes(x = balloon)) +
+  geom_histogram(aes(y = ..density..), binwidth = 0.25) +
+  ggtitle("This is how ballon data distributes") +
+  stat_function(fun = dnorm, args = list(mean = mean(df$balloon, na.rm = TRUE), sd = sd(df$balloon, na.rm = TRUE)), colour= "darkgreen", size = 1)+
+  theme_classic()
+
+qqnorm(df$balloon)
+
+round(pastecs::stat.desc(df$balloon, basic = FALSE, norm = TRUE), digits = 2)
+```
+
+4b
+```{r}
+ggplot(df, aes(x = balloon_balance)) +
+  geom_histogram(aes(y = ..density..), binwidth = 0.25) +
+  ggtitle("This is how balloon balance data distributes") +
+  stat_function(fun = dnorm, args = list(mean = mean(df$balloon_balance, na.rm = TRUE), sd = sd(df$balloon_balance, na.rm = TRUE)), colour= "darkgreen", size = 1)+
+  theme_classic()
+
+qqnorm(df$balloon_balance)
+
+round(pastecs::stat.desc(df$balloon_balance, basic = FALSE, norm = TRUE), digits = 2)
+```
+
+Explain your results in plain terms here: 
+
+Neither the balloon_data or the balloon_balance data are normally distributed. None of the graphs show visual support for that claim. None of the two data distribution graphs have curves that remotely resembles the "bell-curve" shape that is characteristic for a normal distribution. Furthermore, the two Q-Q-plots are far away from looking like perfect diagonal lines. Lastly, the numeric data have, in both cases, got very poor p-values. Both of the p-values are at 0.00 which leads to the null-hypotheses that the data are normally distributed be rejected in both cases. 
+
+
+---
+
+#### Question 5
+
+Shoe size could tell us something about general body size, which could also be connected to one's ability to hold your breath. In other words we predict that there is a positive relation between shoe size and how long time CogSci students can hold their breath. Try plotting the two sets of data against each other using a scatter plot (hint: both variables are continuous variables). Bonus question: Males and females have different body sizes. Use grouping in your plot to distinguish the relationship between shoe size and holding breath for males and females.
+
+```{r question5}
+ggplot(df, aes(x = shoesize, y = breath_hold, colour=gender)) +
+  geom_point()+ggtitle("Breath relative to shoe size")+labs(x="shoesize", y= "breath_hold")+geom_smooth(method=lm) 
+```
+
+
+Explain your results in plain terms here: 
+
+The results from the graph are ambigous. They seem to show that women's ability to hold their breath increases as their shoesizes increase. However, the same is not true for men's ability to hold their breath. Men's ability to hold their breath is quite consistent no matter what their shoesizes are. The graph therefore shows that there is a correlation between women's shoesizes and their ability to hold their breath whereas there is no correlation between the same variables in the case of men.
+
+
